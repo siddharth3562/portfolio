@@ -6,7 +6,7 @@
 }
 
 /* Sidebar Styles - Original Design */
-.sidebar {
+/* .sidebar {
   height: 100vh;
   width: 10vw;
   list-style: none;
@@ -16,6 +16,19 @@
   gap: 10px;
   position: fixed;
   z-index: 1000;
+} */
+
+.sidebar {
+  height: 100vh;
+  width: 10vw;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  position: fixed;
+  z-index: 1000; /* Keep it above the hero content */
+  background-color: transparent; /* Make the background transparent */
 }
 
 .sidebar li {
@@ -71,11 +84,27 @@
 }
 
 /* Hero Section */
-.hero {
+/* .hero {
+  background-image: url('../images/b1.png');
+  width: 100% ;
   min-height: 100vh;
   display: flex;
   align-items: center;
   background-color: white;
+} */
+
+.hero {
+  background-image: url('../images/b1.png');
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  background-color: white;
+  background-size: cover; /* Ensure the image covers the entire section */
+  background-position: center; /* Center the background image */
+  margin-left: 0; /* Allow the image to go under the sidebar */
+  z-index: 1; /* Ensure it's beneath the sidebar */
+  position: relative;
 }
 
 .hero h2 {
@@ -305,6 +334,6 @@
 
 @media (max-width: 576px) {
   .contact{
-    margin-top: 200px;
+    margin-top: 300px;
   }
 }
