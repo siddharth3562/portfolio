@@ -1,22 +1,33 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, flash
 import sqlite3
+from contextlib import closing
 
 app = Flask(__name__)
+# Add a secret key for flash messages
+app.secret_key = 'your_secret_key_here'  # Change this to a secure random key
 
-# Create SQLite database and contacts table (if it doesn't exist)
-def init_db():
+# Database helper function
+def get_db_connection():
     conn = sqlite3.connect('contacts.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS contacts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            email TEXT NOT NULL,
-            message TEXT NOT NULL
-        )
-    ''')
-    conn.commit()
-    conn.close()
+    conn.row_factory = sqlite3.Row
+    return conn
+
+# Create SQLite database and contacts table
+def init_db():
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS contacts (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    email TEXT NOT NULL,
+                    message TEXT NOT NULL
+                )
+            ''')
+            conn.commit()
+    except sqlite3.Error as e:
+        print(f"Database initialization error: {e}")
 
 @app.route('/')
 def index():
@@ -24,21 +35,37 @@ def index():
 
 @app.route('/submit-contact', methods=['POST'])
 def submit_contact():
-    name = request.form.get('name')
-    email = request.form.get('email')
-    message = request.form.get('message')
+    try:
+        name = request.form.get('name')
+        email = request.form.get('email')
+        message = request.form.get('message')
 
-    if not name or not email or not message:
-        return render_template('index.html', error='All fields are required')
+        # Validate form data
+        if not all([name, email, message]):
+            flash('All fields are required', 'error')
+            return render_template('index.html')
 
-    conn = sqlite3.connect('contacts.db')
-    cursor = conn.cursor()
-    cursor.execute('''INSERT INTO contacts (name, email, message) VALUES (?, ?, ?)''', (name, email, message))
-    conn.commit()
-    conn.close()
+        # Use context manager for database connection
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                'INSERT INTO contacts (name, email, message) VALUES (?, ?, ?)',
+                (name, email, message)
+            )
+            conn.commit()
 
-    return render_template('index.html', success='Contact submitted successfully')
+        flash('Message sent successfully!', 'success')
+        return render_template('index.html')
+
+    except sqlite3.Error as e:
+        flash(f'An error occurred while saving your message. Please try again.', 'error')
+        print(f"Database error: {e}")
+        return render_template('index.html')
+    except Exception as e:
+        flash('An unexpected error occurred. Please try again.', 'error')
+        print(f"Unexpected error: {e}")
+        return render_template('index.html')
 
 if __name__ == '__main__':
-    init_db()  # Create the database and table if they don't exist
+    init_db()
     app.run(debug=True)
